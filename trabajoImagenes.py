@@ -5,20 +5,21 @@ Created on Mon Aug 17 19:53:37 2020
 
 @author: daniel
 """
+# imports libraries and download the model and images
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
 import numpy as np
-
+from flask import Flask, request
+from werkzeug.utils import secure_filename
+import os
 
 import matplotlib.pyplot as plt
 
 model = ResNet50(weights='imagenet')
 
-from flask import Flask, request
-from werkzeug.utils import secure_filename
-import os
 
+# flask is used to create a web service, where the images are recognized and their name and percentage of success are returned
 app = Flask(__name__)
 
 UPLOAD_FOLDER = "uploads"
@@ -32,7 +33,7 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+# the web service is created, where we load and identify the data provided by the auxiliary web page
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
@@ -45,7 +46,7 @@ def upload_file():
             
         if file.filename == '':
             return 'No selected file'
-        
+        # We save the image uploaded by the user and proceed to identify it
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             ruta='/home/daniel/Documentos/reconocedor de imagenes/imagenes'
@@ -56,7 +57,7 @@ def upload_file():
             x = np.expand_dims(x, axis=0)
             x = preprocess_input(x)
 
-
+            # The image is identified and the data is extracted to show our result on the screen in a user-friendly way
             preds = model.predict(x)
             # decode the results into a list of tuples (class, description, probability)
             # (one such list for each sample in the batch)
@@ -69,8 +70,6 @@ def upload_file():
                b=i[1]
                c=str(int(round(i[2]*100)))
                 
-            # print("HOLA")
-            # print(a)
             return '''<h2>La Imagen que acabas de Ingresar Corresponde a un '''+b+''' y Estoy un '''+c+'''%  Seguro</h2>'''
         else:
             return 'No allowed extension'
